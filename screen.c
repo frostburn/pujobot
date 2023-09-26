@@ -124,17 +124,6 @@ void print_screen(simple_screen *s) {
   printf("╚════════════╝\n");
 }
 
-void shuffle6(size_t *array) {
-  int entropy = rand();
-  for (int i = 5; i > 0; i--) {
-    int j = entropy % (i + 1);
-    entropy /= (i + 1);
-    size_t temp = array[i];
-    array[i] = array[j];
-    array[j] = temp;
-  }
-}
-
 int tick_simple_screen(simple_screen *s, int *chain_number_out) {
   *chain_number_out = 0;
   int score = 0;
