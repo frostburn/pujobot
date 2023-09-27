@@ -114,8 +114,8 @@ int main() {
   srand(time(0));
 
   // benchmark();
-  // play_demo();
-  test_effective_lockout();
+  play_demo();
+  // test_effective_lockout();
 
   return EXIT_SUCCESS;
 }

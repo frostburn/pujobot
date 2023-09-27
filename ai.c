@@ -93,6 +93,45 @@ int effective_lockout(simple_game *g, color_t *bag, size_t bag_remaining) {
   }
 }
 
+/**
+ * Heuristic score to discourage wasting of material.
+ */
+int material_count(simple_game *g) {
+  puyos mask;
+  store_mask(mask, g->screen.grid);
+  return puyo_count(mask);
+}
+
+/**
+ * Heuristic score to discourage top-outs.
+ */
+int top_penalty(simple_game *g) {
+  puyos mask;
+  store_mask(mask, g->screen.grid);
+  slice_t top_lines = (1 << GHOST_Y) | (1 << (GHOST_Y + 1)) | (1 << (GHOST_Y + 2));
+
+  for (int x = 0; x < NUM_SLICES; ++x) {
+    mask[x] &= top_lines;
+  }
+  int result = puyo_count(mask);
+
+  top_lines ^= (1 << (GHOST_Y + 2));
+
+  for (int x = 0; x < NUM_SLICES; ++x) {
+    mask[x] &= top_lines;
+  }
+  result += puyo_count(mask);
+
+  top_lines ^= (1 << (GHOST_Y + 1));
+
+  for (int x = 0; x < NUM_SLICES; ++x) {
+    mask[x] &= top_lines;
+  }
+  result += puyo_count(mask);
+
+  return -result;
+}
+
 int maxDroplet(simple_game *g) {
   int max = HEURISTIC_FAIL;
   for (int i = 0; i < COLOR_SELECTION_SIZE; ++i) {
@@ -125,7 +164,13 @@ size_t maxDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, d
     simple_game clone = *g;
     play_simple(&clone, bag, moves[i]);
     int move_score = resolve_simple(&clone);
-    double score = move_score + PREFER_LONGER * maxDroplet(&clone) + effective_lockout(g, bag + 2, bag_remaining - 2);
+    double score = (
+      move_score +
+      PREFER_LONGER * maxDroplet(&clone) +
+      effective_lockout(g, bag + 2, bag_remaining - 2) +
+      material_count(g) +
+      top_penalty(g)
+    );
     if (score > *score_out) {
       *score_out = score;
       move = moves[i];
