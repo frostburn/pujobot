@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+// gcc -shared -o pujolib.so -fPIC -Ofast -march=native main.c
+
 #include "util.c"
 
 #include "bitboard.c"  // lol
