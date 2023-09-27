@@ -26,7 +26,7 @@ class SimpleScreen(ctypes.Structure):
     _fields_ = [
         ("grid", Puyos * NUM_PUYO_TYPES),
         ("garbage_slots", ctypes.c_size_t * WIDTH),
-        ("garbage_index", ctypes.c_size_t),
+        ("slot_index", ctypes.c_size_t),
         ("buffered_garbage", ctypes.c_int)
     ]
 
@@ -124,6 +124,10 @@ def on_message(ws, message):
             for i in range(NUM_SLICES):
                 game.screen.grid[j][i] = state["screen"]["grid"][j][i]
         game.screen.buffered_garbage = state["screen"]["bufferedGarbage"]
+        slots = state["screen"]["garbageSlots"]
+        game.screen.slot_index = WIDTH - 1 - len(slots)
+        for j in range(len(slots)):
+            game.screen.garbage_slots[game.screen.slot_index + j] = slots[j]
         game.pending_garbage = state["pendingGarbage"]
         game.late_garbage = state["lateGarbage"]
         game.move_time = state["moveTime"]
@@ -132,7 +136,7 @@ def on_message(ws, message):
         for i in range(len(state["bag"])):
             bag[i] = state["bag"][i]
 
-        move = pujolib.flexDropletStrategy3(g, bag, BAG_SIZE, h)
+        move = pujolib.flexDropletStrategy3(g, bag, len(state["bag"]), h)
 
         pujolib.print_screen(s)
         print("Heuristic score:", heuristic_score.value)

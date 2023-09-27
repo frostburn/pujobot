@@ -115,14 +115,14 @@ int top_penalty(simple_game *g) {
   }
   int result = puyo_count(mask);
 
-  top_lines ^= (1 << (GHOST_Y + 2));
+  top_lines ^= 1 << (GHOST_Y + 2);
 
   for (int x = 0; x < NUM_SLICES; ++x) {
     mask[x] &= top_lines;
   }
   result += puyo_count(mask);
 
-  top_lines ^= (1 << (GHOST_Y + 1));
+  top_lines ^= 1 << (GHOST_Y + 1);
 
   for (int x = 0; x < NUM_SLICES; ++x) {
     mask[x] &= top_lines;
@@ -178,7 +178,8 @@ size_t flexDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, 
   // Shuffle to break ties
   shuffle(moves, num_moves);
 
-  *score_out = HEURISTIC_FAIL;
+  double flex_bonus = 0;
+  double max = HEURISTIC_FAIL;
   size_t move = num_moves ? moves[0] : 0;
 
   for (size_t i = 0; i < num_moves; ++i) {
@@ -192,11 +193,15 @@ size_t flexDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, 
       material_count(&clone) +
       top_penalty(&clone)
     );
-    if (score > *score_out) {
-      *score_out = score;
+    if (score > max) {
+      max = score;
       move = moves[i];
     }
+    flex_bonus += score;
   }
+  flex_bonus /= num_moves || 1;
+
+  *score_out = 0.9 * max + 0.1 * flex_bonus;
 
   return move;
 }
@@ -211,7 +216,8 @@ size_t flexDropletStrategy2(simple_game *g, color_t *bag, size_t bag_remaining, 
   // Shuffle to break ties
   shuffle(moves, num_moves);
 
-  *score_out = HEURISTIC_FAIL;
+  double flex_bonus = 0;
+  double max = HEURISTIC_FAIL;
   size_t move = num_moves ? moves[0] : 0;
 
   for (size_t i = 0; i < num_moves; ++i) {
@@ -221,11 +227,15 @@ size_t flexDropletStrategy2(simple_game *g, color_t *bag, size_t bag_remaining, 
     double search_score;
     flexDropletStrategy1(&clone, bag + 2, bag_remaining - 2, &search_score);
     double score = move_score + PREFER_LONGER * search_score;
-    if (score > *score_out) {
-      *score_out = score;
+    if (score > max) {
+      max = score;
       move = moves[i];
     }
+    flex_bonus += score;
   }
+  flex_bonus /= num_moves || 1;
+
+  *score_out = 0.9 * max + 0.1 * flex_bonus;
 
   return move;
 }
@@ -240,7 +250,8 @@ size_t flexDropletStrategy3(simple_game *g, color_t *bag, size_t bag_remaining, 
   // Shuffle to break ties
   shuffle(moves, num_moves);
 
-  *score_out = HEURISTIC_FAIL;
+  double flex_bonus = 0;
+  double max = HEURISTIC_FAIL;
   size_t move = num_moves ? moves[0] : 0;
 
   double scores[SIZEOF(MOVES)];
@@ -256,11 +267,15 @@ size_t flexDropletStrategy3(simple_game *g, color_t *bag, size_t bag_remaining, 
   }
 
   for (size_t i = 0; i < num_moves; ++i) {
-    if (scores[i] > *score_out) {
-      *score_out = scores[i];
+    if (scores[i] > max) {
+      max = scores[i];
       move = moves[i];
     }
+    flex_bonus += scores[i];
   }
+  flex_bonus /= num_moves || 1;
+
+  *score_out = 0.9 * max + 0.1 * flex_bonus;
 
   return move;
 }

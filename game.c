@@ -84,6 +84,7 @@ void play_simple(simple_game *g, color_t *bag, size_t move_index) {
   if (releasedGarbage > ONE_STONE) {
     releasedGarbage = ONE_STONE;
   }
+  g->pending_garbage -= releasedGarbage;
   g->screen.buffered_garbage += releasedGarbage;
 }
 
