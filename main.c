@@ -63,7 +63,7 @@ void play_demo() {
   int score = 0;
   for (int i = 0; i < 200; ++i) {
     double heuristic_score;
-    size_t move = maxDropletStrategy3(&g, bag, 2*horizon, &heuristic_score);
+    size_t move = flexDropletStrategy3(&g, bag, 2*horizon, &heuristic_score);
     play_simple(&g, bag, move);
     advance_bag(bag, horizon);
     score += resolve_simple(&g);

@@ -147,7 +147,28 @@ int maxDroplet(simple_game *g) {
   return max;
 }
 
-size_t maxDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
+int flexDroplet(simple_game *g) {
+  double sum = 0;
+  int true_max = HEURISTIC_FAIL;
+  for (int i = 0; i < COLOR_SELECTION_SIZE; ++i) {
+    int max = HEURISTIC_FAIL;
+    for (int x = 0; x < WIDTH; ++x) {
+      simple_game clone = *g;
+      insert_puyo(&(clone.screen), x, 1, g->color_selection[i]);
+      int score = resolve_simple(&clone);
+      if (score > max) {
+        max = score;
+      }
+    }
+    sum += max;
+    if (max > true_max) {
+      true_max = max;
+    }
+  }
+  return 0.8 * sum / COLOR_SELECTION_SIZE + 0.2 * true_max;
+}
+
+size_t flexDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
   if (bag_remaining < 2) {
     exit(EXIT_FAILURE);
   }
@@ -166,10 +187,10 @@ size_t maxDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, d
     int move_score = resolve_simple(&clone);
     double score = (
       move_score +
-      PREFER_LONGER * maxDroplet(&clone) +
-      effective_lockout(g, bag + 2, bag_remaining - 2) +
-      material_count(g) +
-      top_penalty(g)
+      PREFER_LONGER * flexDroplet(&clone) +
+      effective_lockout(&clone, bag + 2, bag_remaining - 2) +
+      material_count(&clone) +
+      top_penalty(&clone)
     );
     if (score > *score_out) {
       *score_out = score;
@@ -180,7 +201,7 @@ size_t maxDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, d
   return move;
 }
 
-size_t maxDropletStrategy2(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
+size_t flexDropletStrategy2(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
   if (bag_remaining < 4) {
     exit(EXIT_FAILURE);
   }
@@ -198,7 +219,7 @@ size_t maxDropletStrategy2(simple_game *g, color_t *bag, size_t bag_remaining, d
     play_simple(&clone, bag, moves[i]);
     int move_score = resolve_simple(&clone);
     double search_score;
-    maxDropletStrategy1(&clone, bag + 2, bag_remaining - 2, &search_score);
+    flexDropletStrategy1(&clone, bag + 2, bag_remaining - 2, &search_score);
     double score = move_score + PREFER_LONGER * search_score;
     if (score > *score_out) {
       *score_out = score;
@@ -209,7 +230,7 @@ size_t maxDropletStrategy2(simple_game *g, color_t *bag, size_t bag_remaining, d
   return move;
 }
 
-size_t maxDropletStrategy3(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
+size_t flexDropletStrategy3(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
   if (bag_remaining < 6) {
     exit(EXIT_FAILURE);
   }
@@ -230,7 +251,7 @@ size_t maxDropletStrategy3(simple_game *g, color_t *bag, size_t bag_remaining, d
     play_simple(&clone, bag, moves[i]);
     int move_score = resolve_simple(&clone);
     double search_score;
-    maxDropletStrategy2(&clone, bag + 2, bag_remaining, &search_score);
+    flexDropletStrategy2(&clone, bag + 2, bag_remaining, &search_score);
     scores[i] = move_score + PREFER_LONGER * search_score;
   }
 

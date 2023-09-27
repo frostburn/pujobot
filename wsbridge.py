@@ -77,17 +77,6 @@ bag = Bag()
 
 heuristic_score = ctypes.c_double()
 h = ctypes.byref(heuristic_score)
-score = 0
-
-if False:
-    for _ in range(100):
-        move = pujolib.maxDropletStrategy2(g, bag, h)
-        pujolib.play_simple(g, bag, move)
-        bag.advance()
-        score += pujolib.resolve_simple(g)
-        pujolib.print_screen(s)
-        print("Score:", score)
-
 
 # All possible locations and orientations right below the garbage buffer line.
 MOVES = [
@@ -143,7 +132,7 @@ def on_message(ws, message):
         for i in range(len(state["bag"])):
             bag[i] = state["bag"][i]
 
-        move = pujolib.maxDropletStrategy3(g, bag, BAG_SIZE, h)
+        move = pujolib.flexDropletStrategy3(g, bag, BAG_SIZE, h)
 
         pujolib.print_screen(s)
         print("Heuristic score:", heuristic_score.value)
