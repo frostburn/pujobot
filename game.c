@@ -1,3 +1,4 @@
+#define TARGET_POINTS (70)
 #define ONE_STONE (30)
 #define COLOR_SELECTION_SIZE (4)
 // Value all-clears based on the amount of garbage they send.
@@ -36,6 +37,8 @@ static const size_t MOVES[][5] = {
 
 typedef struct simple_game {
   simple_screen screen;
+  int point_residue;
+  bool all_clear_bonus;
   int pending_garbage;
   int late_garbage;
   float late_time_remaining;
@@ -45,6 +48,8 @@ typedef struct simple_game {
 
 void clear_simple_game(simple_game *g) {
   clear_simple_screen(&(g->screen));
+  g->point_residue = 0;
+  g->all_clear_bonus = 0;
   g->pending_garbage = 0;
   g->late_garbage = 0;
   g->late_time_remaining = 0;
@@ -80,17 +85,41 @@ void play_simple(simple_game *g, color_t *bag, size_t move_index) {
   insert_puyo(&(g->screen), MOVES[move_index][0], MOVES[move_index][1], color1);
   insert_puyo(&(g->screen), MOVES[move_index][2], MOVES[move_index][3], color2);
   
-  int releasedGarbage = g->pending_garbage;
-  if (releasedGarbage > ONE_STONE) {
-    releasedGarbage = ONE_STONE;
+  int released_garbage = g->pending_garbage;
+  if (released_garbage > ONE_STONE) {
+    released_garbage = ONE_STONE;
   }
-  g->pending_garbage -= releasedGarbage;
-  g->screen.buffered_garbage += releasedGarbage;
+  g->pending_garbage -= released_garbage;
+  g->screen.buffered_garbage += released_garbage;
 }
 
 int resolve_simple(simple_game *g) {
   int chain_number;
   int score = tick_simple_screen(&(g->screen), &chain_number);
+
+  if (chain_number && g->all_clear_bonus) {
+    g->point_residue += SIMPLE_ALL_CLEAR_BONUS;
+    g->all_clear_bonus = false;
+  }
+  g->point_residue += score;
+
+  int generated_garbage = g->point_residue / TARGET_POINTS;
+  g->point_residue -= generated_garbage * TARGET_POINTS;
+
+  if (g->pending_garbage > generated_garbage) {
+    g->pending_garbage -= generated_garbage;
+    generated_garbage = 0;
+  } else {
+    generated_garbage -= g->pending_garbage;
+    g->pending_garbage = 0;
+  }
+  if (g->late_garbage > generated_garbage) {
+    g->late_garbage -= generated_garbage;
+    generated_garbage = 0;
+  } else {
+    generated_garbage -= g->late_garbage;
+    g->late_garbage = 0;
+  }
   
   g->late_time_remaining -= chain_number + g->move_time;
   if (g->late_time_remaining <= 0) {
@@ -99,6 +128,7 @@ int resolve_simple(simple_game *g) {
   }
 
   if (is_all_clear(&(g->screen))) {
+    g->all_clear_bonus = true;
     score += SIMPLE_ALL_CLEAR_BONUS;
   }
   if (is_locked_out(&(g->screen))) {
@@ -109,8 +139,10 @@ int resolve_simple(simple_game *g) {
 
 void print_simple_game(simple_game *g) {
   print_screen(&(g->screen));
+  printf("Point residue = %d\n", g->point_residue);
+  printf("All clear = %s\n", g->all_clear_bonus ? "true" : "false");
   printf("Pending garbage = %d\n", g->pending_garbage);
-  printf("Late garbage = %d @ %g\n", g->late_garbage, g->late_time_remaining);
+  printf("Late garbage = %d in %g\n", g->late_garbage, g->late_time_remaining);
   printf("Move time = %g\n", g->move_time);
   printf("Color selection = [%d, %d, %d, %d]\n", g->color_selection[0], g->color_selection[1], g->color_selection[2], g->color_selection[3]);
 }

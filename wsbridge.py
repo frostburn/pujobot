@@ -35,6 +35,8 @@ ColorSelection = color_t * COLOR_SELECTION_SIZE
 class SimpleGame(ctypes.Structure):
     _fields_ = [
         ("screen", SimpleScreen),
+        ("point_residue", ctypes.c_int),
+        ("all_clear_bonus", ctypes.c_bool),
         ("pending_garbage", ctypes.c_int),
         ("late_time_remaining", ctypes.c_float),
         ("move_time", ctypes.c_float),
@@ -122,6 +124,8 @@ def on_message(ws, message):
             for i in range(NUM_SLICES):
                 game.screen.grid[j][i] = state["screen"]["grid"][j][i]
         game.screen.buffered_garbage = state["screen"]["bufferedGarbage"]
+        game.point_residue = state["pointResidue"]
+        game.all_clear_bonus = state["allClearBonus"]
         game.pending_garbage = state["pendingGarbage"]
         game.late_garbage = state["lateGarbage"]
         game.move_time = state["moveTime"]
