@@ -193,6 +193,7 @@ int spark_groups(puyos p, puyos sparks_out, int *group_bonus_out) {
   puyos group;
   puyos temp;
 
+  clear(group);
   clear(sparks_out);
   temp[0] = p[0] & VISIBLE;
   temp[1] = p[1] & VISIBLE;
@@ -202,9 +203,10 @@ int spark_groups(puyos p, puyos sparks_out, int *group_bonus_out) {
   temp[5] = p[5] & VISIBLE;
 
   // Clear from the bottom up hoping for an early exit.
-  for (int i = BOTTOM_Y; i > GHOST_Y; i -= 2) {
-    for (int j = 0; j < NUM_SLICES; ++j) {
-      group[j] = 3 << i;
+  for (int y = BOTTOM_Y - 1; y > GHOST_Y; y -= 2) {
+    for (int x = 0; x < NUM_SLICES; ++x) {
+      // This may have residue in other slices but those groups have already been cleared.
+      group[x] = 3 << y;
       flood(group, temp);
       apply_xor(temp, group);
       int group_size = puyo_count(group);
@@ -311,4 +313,8 @@ void split(puyos in, puyos out) {
       }
     }
   }
+}
+
+void puyos_fprintf(FILE *f, puyos p) {
+  fprintf(f, "{0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x};\n", p[0], p[1], p[2], p[3], p[4], p[5]);
 }

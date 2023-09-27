@@ -189,9 +189,9 @@ size_t flexDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, 
     double score = (
       move_score +
       PREFER_LONGER * flexDroplet(&clone) +
-      effective_lockout(&clone, bag + 2, bag_remaining - 2) +
       material_count(&clone) +
-      top_penalty(&clone)
+      top_penalty(&clone) +
+      effective_lockout(&clone, bag + 2, bag_remaining - 2)
     );
     if (score > max) {
       max = score;
@@ -199,7 +199,9 @@ size_t flexDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, 
     }
     flex_bonus += score;
   }
-  flex_bonus /= num_moves || 1;
+  if (num_moves > 0) {
+    flex_bonus /= num_moves;
+  }
 
   *score_out = 0.9 * max + 0.1 * flex_bonus;
 
@@ -233,7 +235,9 @@ size_t flexDropletStrategy2(simple_game *g, color_t *bag, size_t bag_remaining, 
     }
     flex_bonus += score;
   }
-  flex_bonus /= num_moves || 1;
+  if (num_moves > 0) {
+    flex_bonus /= num_moves;
+  }
 
   *score_out = 0.9 * max + 0.1 * flex_bonus;
 
@@ -273,7 +277,9 @@ size_t flexDropletStrategy3(simple_game *g, color_t *bag, size_t bag_remaining, 
     }
     flex_bonus += scores[i];
   }
-  flex_bonus /= num_moves || 1;
+  if (num_moves > 0) {
+    flex_bonus /= num_moves;
+  }
 
   *score_out = 0.9 * max + 0.1 * flex_bonus;
 

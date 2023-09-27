@@ -61,7 +61,7 @@ size_t get_simple_moves(simple_game *g, color_t *bag, size_t *moves_out) {
   bool symmetric = bag != NULL && bag[0] == bag[1];
   size_t num_moves = 0;
   for (size_t i = 0; i < SIZEOF(MOVES); ++i) {
-    if (symmetric && i >= SIZEOF(MOVES) / 2) {
+    if (symmetric && 2*i >= SIZEOF(MOVES)) {
       return num_moves;
     }
     size_t x1 = MOVES[i][0];
@@ -105,4 +105,12 @@ int resolve_simple(simple_game *g) {
     score += SIMPLE_GAME_OVER;
   }
   return score;
+}
+
+void print_simple_game(simple_game *g) {
+  print_screen(&(g->screen));
+  printf("Pending garbage = %d\n", g->pending_garbage);
+  printf("Late garbage = %d @ %g\n", g->late_garbage, g->late_time_remaining);
+  printf("Move time = %g\n", g->move_time);
+  printf("Color selection = [%d, %d, %d, %d]\n", g->color_selection[0], g->color_selection[1], g->color_selection[2], g->color_selection[3]);
 }
