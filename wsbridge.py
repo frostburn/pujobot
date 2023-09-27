@@ -25,8 +25,6 @@ color_t = ctypes.c_int
 class SimpleScreen(ctypes.Structure):
     _fields_ = [
         ("grid", Puyos * NUM_PUYO_TYPES),
-        ("garbage_slots", ctypes.c_size_t * WIDTH),
-        ("slot_index", ctypes.c_size_t),
         ("buffered_garbage", ctypes.c_int)
     ]
 
@@ -124,14 +122,6 @@ def on_message(ws, message):
             for i in range(NUM_SLICES):
                 game.screen.grid[j][i] = state["screen"]["grid"][j][i]
         game.screen.buffered_garbage = state["screen"]["bufferedGarbage"]
-
-        for i in range(WIDTH):
-            game.screen.garbage_slots[i] = 9;
-        slots = state["screen"]["garbageSlots"]
-        game.screen.slot_index = WIDTH - len(slots)
-        for i in range(len(slots)):
-            game.screen.garbage_slots[game.screen.slot_index + i] = slots[i]
-
         game.pending_garbage = state["pendingGarbage"]
         game.late_garbage = state["lateGarbage"]
         game.move_time = state["moveTime"]

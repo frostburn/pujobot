@@ -19,8 +19,6 @@ typedef int color_t;
 
 typedef struct simple_screen {
   puyos grid[NUM_PUYO_TYPES];
-  size_t garbage_slots[WIDTH];
-  size_t slot_index;
   int buffered_garbage;
 } simple_screen;
 
@@ -38,10 +36,6 @@ void clear_simple_screen(simple_screen *s) {
     clear(s->grid[i]);
   }
   s->buffered_garbage = 0;
-  for (int i = 0; i < WIDTH; ++i) {
-    s->garbage_slots[i] = i;
-  }
-  s->slot_index = WIDTH;
 }
 
 void randomize_screen(simple_screen *s) {
@@ -125,7 +119,6 @@ void print_screen(simple_screen *s) {
     printf(" ║\n");
   }
   printf("╚════════════╝\n");
-  printf("Slots = [%zu, %zu, %zu, %zu, %zu, %zu] @ %zu\n", s->garbage_slots[0], s->garbage_slots[1], s->garbage_slots[2], s->garbage_slots[3], s->garbage_slots[4], s->garbage_slots[5], s->slot_index);
   printf("Buffered garbage = %d\n", s->buffered_garbage);
 }
 
@@ -149,15 +142,11 @@ int tick_simple_screen(simple_screen *s, int *chain_number_out) {
       puyos line;
       clear(line);
       while (s->buffered_garbage) {
-        if (s->slot_index >= WIDTH) {
-          for (int i = 0; i < WIDTH; ++i) {
-            s->garbage_slots[i] = i;
-          }
-          shuffle6(s->garbage_slots);
-          s->slot_index = 0;
+        int x = rand() % WIDTH;
+        if (!line[x]) {
+          line[x] = 1;
+          s->buffered_garbage--;
         }
-        line[s->garbage_slots[s->slot_index++]] = 1;
-        s->buffered_garbage--;
       }
       merge(s->grid[GARBAGE], line);
     }
@@ -247,8 +236,5 @@ void simple_screen_fprintf(FILE *f, simple_screen *s) {
       fprintf(f, "0x%x, ", s->grid[j][i]);
     }
   }
-  for (int i = 0; i < WIDTH; ++i) {
-    fprintf(f, "%zu, ", s->garbage_slots[i]);
-  }
-  fprintf(f, "%zu, %d};\n", s->slot_index, s->buffered_garbage);
+  fprintf(f, "%d};\n", s->buffered_garbage);
 }

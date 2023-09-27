@@ -295,7 +295,7 @@ void fall_one(puyos *grid) {
 
   for (int i = 0; i < NUM_PUYO_TYPES; ++i) {
     for (int x = 0; x < NUM_SLICES; ++x) {
-      unsigned short falling = grid[i][x] & unsupported[x];
+      slice_t falling = grid[i][x] & unsupported[x];
       grid[i][x] ^= falling ^ (falling << 1);
     }
   }
