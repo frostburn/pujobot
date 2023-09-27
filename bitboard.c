@@ -238,6 +238,15 @@ void vanish_top(puyos p) {
   p[5] &= SEMI_VISIBLE;
 }
 
+void keep_visible(puyos p) {
+  p[0] &= VISIBLE;
+  p[1] &= VISIBLE;
+  p[2] &= VISIBLE;
+  p[3] &= VISIBLE;
+  p[4] &= VISIBLE;
+  p[5] &= VISIBLE;
+}
+
 void spark_garbage(puyos garbage, puyos cleared, puyos sparks_out) {
   store_clone(sparks_out, garbage);
 
@@ -286,6 +295,20 @@ void fall_one(puyos *grid) {
     for (int x = 0; x < NUM_SLICES; ++x) {
       unsigned short falling = grid[i][x] & unsupported[x];
       grid[i][x] ^= falling ^ (falling << 1);
+    }
+  }
+}
+
+void split(puyos in, puyos out) {
+  clear(out);
+  for (int y = HEIGHT - 1; y >= 0; y--) {
+    slice_t s = 1 << y;
+    for (int x = 0; x < NUM_SLICES; ++x) {
+      if (in[x] & s) {
+        in[x] ^= s;
+        out[x] = s;
+        return;
+      }
     }
   }
 }

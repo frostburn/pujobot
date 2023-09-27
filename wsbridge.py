@@ -43,7 +43,9 @@ class SimpleGame(ctypes.Structure):
         ("color_selection", ColorSelection)
     ]
 
-class Bag(color_t * 6):
+BAG_SIZE = 6
+
+class Bag(color_t * BAG_SIZE):
     def __init__(self):
         super().__init__(
             random.randint(0, 3),
@@ -141,7 +143,7 @@ def on_message(ws, message):
         for i in range(len(state["bag"])):
             bag[i] = state["bag"][i]
 
-        move = pujolib.maxDropletStrategy3(g, bag, h)
+        move = pujolib.maxDropletStrategy3(g, bag, BAG_SIZE, h)
 
         pujolib.print_screen(s)
         print("Heuristic score:", heuristic_score.value)

@@ -1,6 +1,98 @@
 #define HEURISTIC_FAIL (-2000000)
 #define PREFER_LONGER (1.1)
 
+/**
+ * Determine if the game is effectively locked out.
+ */
+int effective_lockout(simple_game *g, color_t *bag, size_t bag_remaining) {
+  puyos p;
+  puyos mask;
+  store_mask(mask, g->screen.grid);
+  keep_visible(mask);
+  if (puyo_count(mask) < WIDTH * VISIBLE_HEIGHT - 2) {
+    return 0;
+  }
+  invert(mask);
+  keep_visible(mask);
+  if (bag_remaining >= 2) {
+    if (bag[0] == bag[1]) {
+      store_clone(p, g->screen.grid[bag[0]]);
+      keep_visible(p);
+      flood(mask, p);
+      if (puyo_count(mask) >= CLEAR_THRESHOLD) {
+        return 0;
+      }
+      return SIMPLE_GAME_OVER;
+    } else {
+      puyos piece;
+      split(mask, piece);
+
+      puyos group;
+
+      store_clone(p, g->screen.grid[bag[0]]);
+      keep_visible(p);
+      store_clone(group, mask);
+      flood(group, p);
+      if (puyo_count(group) >= CLEAR_THRESHOLD) {
+        return 0;
+      }
+      store_clone(group, piece);
+      flood(group, p);
+      if (puyo_count(group) >= CLEAR_THRESHOLD) {
+        return 0;
+      }
+
+      store_clone(p, g->screen.grid[bag[1]]);
+      keep_visible(p);
+      store_clone(group, mask);
+      flood(group, p);
+      if (puyo_count(group) >= CLEAR_THRESHOLD) {
+        return 0;
+      }
+      store_clone(group, piece);
+      flood(group, p);
+      if (puyo_count(group) >= CLEAR_THRESHOLD) {
+        return 0;
+      }
+
+      return SIMPLE_GAME_OVER;
+    }
+  } else {
+    puyos piece1;
+    puyos piece2;
+    store_clone(piece1, mask);
+    split(piece1, piece2);
+    for (int i = 0; i < COLOR_SELECTION_SIZE; ++i) {
+      puyos group;
+
+      store_clone(p, g->screen.grid[g->color_selection[i]]);
+      keep_visible(p);
+      store_clone(group, mask);
+      flood(group, p);
+      if (puyo_count(group) >= CLEAR_THRESHOLD) {
+        return 0;
+      }
+
+      store_clone(p, g->screen.grid[g->color_selection[i]]);
+      keep_visible(p);
+      store_clone(group, piece1);
+      flood(group, p);
+      if (puyo_count(group) >= CLEAR_THRESHOLD) {
+        return 0;
+      }
+
+      store_clone(p, g->screen.grid[g->color_selection[i]]);
+      keep_visible(p);
+      store_clone(group, piece2);
+      flood(group, p);
+      if (puyo_count(group) >= CLEAR_THRESHOLD) {
+        return 0;
+      }
+    }
+    return SIMPLE_GAME_OVER;
+  }
+}
+
 int maxDroplet(simple_game *g) {
   int max = HEURISTIC_FAIL;
   for (int i = 0; i < COLOR_SELECTION_SIZE; ++i) {
@@ -16,7 +108,11 @@ int maxDroplet(simple_game *g) {
   return max;
 }
 
-size_t maxDropletStrategy1(simple_game *g, color_t *bag, double *score_out) {
+size_t maxDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
+  if (bag_remaining < 2) {
+    exit(EXIT_FAILURE);
+  }
+
   size_t moves[SIZEOF(MOVES)];
   size_t num_moves = get_simple_moves(g, bag, moves);
   // Shuffle to break ties
@@ -29,7 +125,7 @@ size_t maxDropletStrategy1(simple_game *g, color_t *bag, double *score_out) {
     simple_game clone = *g;
     play_simple(&clone, bag, moves[i]);
     int move_score = resolve_simple(&clone);
-    double score = move_score + PREFER_LONGER * maxDroplet(&clone);
+    double score = move_score + PREFER_LONGER * maxDroplet(&clone) + effective_lockout(g, bag + 2, bag_remaining - 2);
     if (score > *score_out) {
       *score_out = score;
       move = moves[i];
@@ -39,7 +135,11 @@ size_t maxDropletStrategy1(simple_game *g, color_t *bag, double *score_out) {
   return move;
 }
 
-size_t maxDropletStrategy2(simple_game *g, color_t *bag, double *score_out) {
+size_t maxDropletStrategy2(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
+  if (bag_remaining < 4) {
+    exit(EXIT_FAILURE);
+  }
+
   size_t moves[SIZEOF(MOVES)];
   size_t num_moves = get_simple_moves(g, bag, moves);
   // Shuffle to break ties
@@ -53,7 +153,7 @@ size_t maxDropletStrategy2(simple_game *g, color_t *bag, double *score_out) {
     play_simple(&clone, bag, moves[i]);
     int move_score = resolve_simple(&clone);
     double search_score;
-    maxDropletStrategy1(&clone, bag + 2, & search_score);
+    maxDropletStrategy1(&clone, bag + 2, bag_remaining - 2, &search_score);
     double score = move_score + PREFER_LONGER * search_score;
     if (score > *score_out) {
       *score_out = score;
@@ -64,7 +164,11 @@ size_t maxDropletStrategy2(simple_game *g, color_t *bag, double *score_out) {
   return move;
 }
 
-size_t maxDropletStrategy3(simple_game *g, color_t *bag, double *score_out) {
+size_t maxDropletStrategy3(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
+  if (bag_remaining < 6) {
+    exit(EXIT_FAILURE);
+  }
+
   size_t moves[SIZEOF(MOVES)];
   size_t num_moves = get_simple_moves(g, bag, moves);
   // Shuffle to break ties
@@ -81,7 +185,7 @@ size_t maxDropletStrategy3(simple_game *g, color_t *bag, double *score_out) {
     play_simple(&clone, bag, moves[i]);
     int move_score = resolve_simple(&clone);
     double search_score;
-    maxDropletStrategy2(&clone, bag + 2, & search_score);
+    maxDropletStrategy2(&clone, bag + 2, bag_remaining, &search_score);
     scores[i] = move_score + PREFER_LONGER * search_score;
   }
 
