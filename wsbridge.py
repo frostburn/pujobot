@@ -4,10 +4,13 @@ import sys
 import json
 import websocket
 
+cmd = "gcc -shared -o pujolib.so -fopenmp -fPIC -Ofast -march=native main.c"
+
 try:
     pujolib = ctypes.CDLL("pujolib.so")
 except OSError:
-    sys.stderr.write("Library not found. Did you remember to run:\ngcc -shared -o pujolib.so -fPIC -Ofast -march=native main.c\n\n")
+    sys.stderr.write("Library not found. Did you remember to run:\n")
+    sys.stderr.write(cmd + "\n\n")
     raise()
 
 WIDTH = 6
@@ -138,7 +141,7 @@ def on_message(ws, message):
         for i in range(len(state["bag"])):
             bag[i] = state["bag"][i]
 
-        move = pujolib.maxDropletStrategy2(g, bag, h)
+        move = pujolib.maxDropletStrategy3(g, bag, h)
 
         pujolib.print_screen(s)
         print("Heuristic score:", heuristic_score.value)

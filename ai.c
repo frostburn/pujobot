@@ -63,3 +63,34 @@ size_t maxDropletStrategy2(simple_game *g, color_t *bag, double *score_out) {
 
   return move;
 }
+
+size_t maxDropletStrategy3(simple_game *g, color_t *bag, double *score_out) {
+  size_t moves[SIZEOF(MOVES)];
+  size_t num_moves = get_simple_moves(g, bag, moves);
+  // Shuffle to break ties
+  shuffle(moves, num_moves);
+
+  *score_out = HEURISTIC_FAIL;
+  size_t move = num_moves ? moves[0] : 0;
+
+  double scores[SIZEOF(MOVES)];
+
+  #pragma omp parallel for
+  for (size_t i = 0; i < num_moves; ++i) {
+    simple_game clone = *g;
+    play_simple(&clone, bag, moves[i]);
+    int move_score = resolve_simple(&clone);
+    double search_score;
+    maxDropletStrategy2(&clone, bag + 2, & search_score);
+    scores[i] = move_score + PREFER_LONGER * search_score;
+  }
+
+  for (size_t i = 0; i < num_moves; ++i) {
+    if (scores[i] > *score_out) {
+      *score_out = scores[i];
+      move = moves[i];
+    }
+  }
+
+  return move;
+}

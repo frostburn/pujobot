@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-// gcc -shared -o pujolib.so -fPIC -Ofast -march=native main.c
+// gcc main.c -fopenmp -Ofast -march=native
+// gcc -shared -o pujolib.so -fopenmp -fPIC -Ofast -march=native main.c
 
 #include "util.c"
 
@@ -39,6 +40,15 @@ void benchmark() {
   free(bag);
 }
 
+void advance_bag(color_t *bag, size_t horizon) {
+  for (size_t i = 0; i < horizon - 1; ++i) {
+    bag[2*i+0] = bag[2*i+2];
+    bag[2*i+1] = bag[2*i+3];
+  }
+  bag[2*(horizon-1)+0] = rand() % COLOR_SELECTION_SIZE;
+  bag[2*(horizon-1)+1] = rand() % COLOR_SELECTION_SIZE;
+}
+
 int main() {
   srand(time(0));
 
@@ -46,15 +56,19 @@ int main() {
 
   simple_game g;
   clear_simple_game(&g);
-  color_t *bag = malloc(2 * sizeof(color_t));
+  size_t horizon = 3;
+  color_t *bag = malloc(2 * horizon * sizeof(color_t));
+
+  for (size_t i = 0; i < horizon; ++i) {
+    advance_bag(bag, horizon);
+  }
 
   int score = 0;
   for (int i = 0; i < 200; ++i) {
     double heuristic_score;
-    bag[0] = g.color_selection[rand() % COLOR_SELECTION_SIZE];
-    bag[1] = g.color_selection[rand() % COLOR_SELECTION_SIZE];
-    size_t move = maxDropletStrategy1(&g, bag, &heuristic_score);
+    size_t move = maxDropletStrategy3(&g, bag, &heuristic_score);
     play_simple(&g, bag, move);
+    advance_bag(bag, horizon);
     score += resolve_simple(&g);
     print_screen(&(g.screen));
     printf("Score: %d\n", score);
