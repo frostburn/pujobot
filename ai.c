@@ -170,6 +170,7 @@ int flexDroplet(simple_game *g) {
 
 size_t flexDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
   if (bag_remaining < 2) {
+    fprintf(stderr, "Flex 1 needs at least a bag of 2.\n");
     exit(EXIT_FAILURE);
   }
 
@@ -210,6 +211,7 @@ size_t flexDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, 
 
 size_t flexDropletStrategy2(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
   if (bag_remaining < 4) {
+    fprintf(stderr, "Flex 2 needs at least a bag of 4.\n");
     exit(EXIT_FAILURE);
   }
 
@@ -246,6 +248,7 @@ size_t flexDropletStrategy2(simple_game *g, color_t *bag, size_t bag_remaining, 
 
 size_t flexDropletStrategy3(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
   if (bag_remaining < 6) {
+    fprintf(stderr, "Flex 3 needs at least a bag of 6.\n");
     exit(EXIT_FAILURE);
   }
 
@@ -266,7 +269,7 @@ size_t flexDropletStrategy3(simple_game *g, color_t *bag, size_t bag_remaining, 
     play_simple(&clone, bag, moves[i]);
     int move_score = resolve_simple(&clone);
     double search_score;
-    flexDropletStrategy2(&clone, bag + 2, bag_remaining, &search_score);
+    flexDropletStrategy2(&clone, bag + 2, bag_remaining - 2, &search_score);
     scores[i] = move_score + PREFER_LONGER * search_score;
   }
 
