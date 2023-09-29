@@ -53,7 +53,7 @@ void clear_simple_game(simple_game *g) {
   g->pending_garbage = 0;
   g->late_garbage = 0;
   g->late_time_remaining = 0;
-  g->move_time = 0.3846;
+  g->move_time = 16;
   g->color_selection[0] = 0;
   g->color_selection[1] = 1;
   g->color_selection[2] = 2;

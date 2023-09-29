@@ -61,14 +61,26 @@ void play_demo() {
   }
 
   int score = 0;
-  for (int i = 0; i < 200; ++i) {
+  for (int i = 0; i < 10000; ++i) {
+    if (rand() < RAND_MAX / 12) {
+      if (rand() < RAND_MAX / 2) {
+        g.pending_garbage += (rand() % 25) + (rand() % 25);
+      } else {
+        g.late_garbage += (rand() % 25) + (rand() % 25);
+        g.late_time_remaining += rand() % 100;
+      }
+    }
     double heuristic_score;
     size_t move = flexDropletStrategy3(&g, bag, 2*horizon, &heuristic_score);
     play_simple(&g, bag, move);
     advance_bag(bag, horizon);
-    score += resolve_simple(&g);
-    print_screen(&(g.screen));
+    int move_score = resolve_simple(&g);
+    score += move_score;
+    print_simple_game(&g);
     printf("Score: %d\n", score);
+    if (move_score < 0) {
+      clear_simple_game(&g);
+    }
   }
 
   free(bag);

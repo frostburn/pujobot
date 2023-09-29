@@ -7,7 +7,7 @@ import websocket
 cmd = "gcc -shared -o pujolib.so -fopenmp -fPIC -Ofast -march=native main.c"
 
 try:
-    pujolib = ctypes.CDLL("pujolib.so")
+    pujolib = ctypes.CDLL("./pujolib.so")
 except OSError:
     sys.stderr.write("Library not found. Did you remember to run:\n")
     sys.stderr.write(cmd + "\n\n")
@@ -38,6 +38,7 @@ class SimpleGame(ctypes.Structure):
         ("point_residue", ctypes.c_int),
         ("all_clear_bonus", ctypes.c_bool),
         ("pending_garbage", ctypes.c_int),
+        ("late_garbage", ctypes.c_int),
         ("late_time_remaining", ctypes.c_float),
         ("move_time", ctypes.c_float),
         ("color_selection", ColorSelection)
@@ -108,13 +109,16 @@ MOVES = [
   {"x1": 4, "y1": 1, "x2": 5, "y2": 1, "orientation": 3},
 ];
 
+LOG = False
+
 wins = 0
 draws = 0
 losses = 0
 
 def on_message(ws, message):
     global wins, draws, losses
-    # print("Message received", message)
+    if LOG:
+        print("Message received", message)
     data = json.loads(message)
     if data["type"] == "move request":
         ws.send(json.dumps({"type": "simple state request"}))
@@ -128,6 +132,7 @@ def on_message(ws, message):
         game.all_clear_bonus = state["allClearBonus"]
         game.pending_garbage = state["pendingGarbage"]
         game.late_garbage = state["lateGarbage"]
+        game.late_time_remaining = state["lateTimeRemaining"]
         game.move_time = state["moveTime"]
         for i in range(COLOR_SELECTION_SIZE):
             game.color_selection[i] = state["colorSelection"][i]
@@ -136,12 +141,13 @@ def on_message(ws, message):
 
         move = pujolib.flexDropletStrategy3(g, bag, len(state["bag"]), h)
 
-        pujolib.print_screen(s)
+        pujolib.print_simple_game(g)
         print("Heuristic score:", heuristic_score.value)
         print("W/D/L:", "{}/{}/{}".format(wins, draws, losses))
 
         response = dict(MOVES[move])
         response["type"] = "move"
+        response["kickDown"] = True
         ws.send(json.dumps(response))
     elif data["type"] == "game result":
         if data["result"] == "win":
