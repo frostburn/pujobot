@@ -301,7 +301,7 @@ void fall_one(puyos *grid) {
   }
 }
 
-void split(puyos in, puyos out) {
+void chip(puyos in, puyos out) {
   clear(out);
   for (int y = HEIGHT - 1; y >= 0; y--) {
     slice_t s = 1 << y;
@@ -317,4 +317,13 @@ void split(puyos in, puyos out) {
 
 void puyos_fprintf(FILE *f, puyos p) {
   fprintf(f, "{0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x};\n", p[0], p[1], p[2], p[3], p[4], p[5]);
+}
+
+bool is_contiguous2(puyos p) {
+  for (int x = 0; x < WIDTH; ++x) {
+    if (p[x] & ((p[x] >> 1) | (p[x] >> 1))) {
+      return true;
+    }
+  }
+  return (p[0] & p[1]) | (p[1] & p[2]) | (p[2] & p[3]) | (p[3] & p[4]) | (p[4] & p[5]);
 }

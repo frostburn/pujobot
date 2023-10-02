@@ -4,21 +4,25 @@
 /**
  * Determine if the game is effectively locked out.
  */
-// TODO: Fix
 int effective_lockout(simple_game *g, color_t *bag, size_t bag_remaining) {
   puyos p;
   puyos mask;
   store_mask(mask, g->screen.grid);
   keep_visible(mask);
-  if (puyo_count(mask) < WIDTH * VISIBLE_HEIGHT - 2) {
+  int count = puyo_count(mask);
+  if (count < WIDTH * VISIBLE_HEIGHT - 2) {
     return 0;
+  }
+  if (count >= WIDTH * VISIBLE_HEIGHT) {
+    return SIMPLE_GAME_OVER;
   }
   invert(mask);
   keep_visible(mask);
   if (bag_remaining >= 2) {
-    if (bag[0] == bag[1]) {
+    if (bag[0] == bag[1] && is_contiguous2(mask)) {
       store_clone(p, g->screen.grid[bag[0]]);
       keep_visible(p);
+      merge(p, mask);
       flood(mask, p);
       if (puyo_count(mask) >= CLEAR_THRESHOLD) {
         return 0;
@@ -26,18 +30,20 @@ int effective_lockout(simple_game *g, color_t *bag, size_t bag_remaining) {
       return SIMPLE_GAME_OVER;
     } else {
       puyos piece;
-      split(mask, piece);
+      chip(mask, piece);
 
       puyos group;
 
       store_clone(p, g->screen.grid[bag[0]]);
       keep_visible(p);
       store_clone(group, mask);
+      merge(p, group);
       flood(group, p);
       if (puyo_count(group) >= CLEAR_THRESHOLD) {
         return 0;
       }
       store_clone(group, piece);
+      merge(p, group);
       flood(group, p);
       if (puyo_count(group) >= CLEAR_THRESHOLD) {
         return 0;
@@ -46,11 +52,13 @@ int effective_lockout(simple_game *g, color_t *bag, size_t bag_remaining) {
       store_clone(p, g->screen.grid[bag[1]]);
       keep_visible(p);
       store_clone(group, mask);
+      merge(p, group);
       flood(group, p);
       if (puyo_count(group) >= CLEAR_THRESHOLD) {
         return 0;
       }
       store_clone(group, piece);
+      merge(p, group);
       flood(group, p);
       if (puyo_count(group) >= CLEAR_THRESHOLD) {
         return 0;
@@ -62,21 +70,26 @@ int effective_lockout(simple_game *g, color_t *bag, size_t bag_remaining) {
     puyos piece1;
     puyos piece2;
     store_clone(piece1, mask);
-    split(piece1, piece2);
+    chip(piece1, piece2);
+    bool contiguous = is_contiguous2(mask);
     for (int i = 0; i < COLOR_SELECTION_SIZE; ++i) {
       puyos group;
 
-      store_clone(p, g->screen.grid[g->color_selection[i]]);
-      keep_visible(p);
-      store_clone(group, mask);
-      flood(group, p);
-      if (puyo_count(group) >= CLEAR_THRESHOLD) {
-        return 0;
+      if (contiguous) {
+        store_clone(p, g->screen.grid[g->color_selection[i]]);
+        keep_visible(p);
+        store_clone(group, mask);
+        merge(p, group);
+        flood(group, p);
+        if (puyo_count(group) >= CLEAR_THRESHOLD) {
+          return 0;
+        }
       }
 
       store_clone(p, g->screen.grid[g->color_selection[i]]);
       keep_visible(p);
       store_clone(group, piece1);
+      merge(p, group);
       flood(group, p);
       if (puyo_count(group) >= CLEAR_THRESHOLD) {
         return 0;
@@ -85,6 +98,7 @@ int effective_lockout(simple_game *g, color_t *bag, size_t bag_remaining) {
       store_clone(p, g->screen.grid[g->color_selection[i]]);
       keep_visible(p);
       store_clone(group, piece2);
+      merge(p, group);
       flood(group, p);
       if (puyo_count(group) >= CLEAR_THRESHOLD) {
         return 0;

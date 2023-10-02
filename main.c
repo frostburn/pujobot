@@ -119,6 +119,20 @@ void test_effective_lockout() {
   assert(effective_lockout(&g, MONOBAG, 2) == SIMPLE_GAME_OVER);
   assert(effective_lockout(&g, BAG, 2) == SIMPLE_GAME_OVER);
   assert(effective_lockout(&g, NULL, 0) == SIMPLE_GAME_OVER);
+
+  g.screen.grid[RED][0] ^= 1 << (GHOST_Y + 1);
+  g.screen.grid[RED][4] ^= 1 << (GHOST_Y + 1);
+  MONOBAG[0] = GREEN;
+  MONOBAG[1] = GREEN;
+  assert(effective_lockout(&g, MONOBAG, 2) == SIMPLE_GAME_OVER);
+  assert(effective_lockout(&g, NULL, 0) == SIMPLE_GAME_OVER);
+
+  g.screen.grid[RED][0] |= 1 << (GHOST_Y + 1);
+  g.screen.grid[BLUE][3] ^= 1 << (GHOST_Y + 1);
+  g.screen.grid[GREEN][3] ^= 1 << (GHOST_Y + 1);
+
+  assert(effective_lockout(&g, BAG, 2) == 0);
+  assert(effective_lockout(&g, NULL, 0) == 0);
 }
 
 
@@ -126,8 +140,8 @@ int main() {
   srand(time(0));
 
   // benchmark();
-  play_demo();
-  // test_effective_lockout();
+  // play_demo();
+  test_effective_lockout();
 
   return EXIT_SUCCESS;
 }
