@@ -5,6 +5,10 @@
 #define SIMPLE_ALL_CLEAR_BONUS (2100)
 // Not even a 19-chain can compensate a Game Over.
 #define SIMPLE_GAME_OVER (-1000000)
+#define PASS (-1)
+#define MAX_NUM_MOVES (23)
+
+typedef signed char move_t;
 
 // x1, y1, x2, y2, orientation
 static const size_t MOVES[][5] = {
@@ -60,12 +64,12 @@ void clear_simple_game(simple_game *g) {
   g->color_selection[3] = 3;
 }
 
-size_t get_simple_moves(simple_game *g, color_t *bag, size_t *moves_out) {
+size_t get_simple_moves(simple_game *g, color_t *bag, move_t *moves_out) {
   puyos mask;
   store_mask(mask, g->screen.grid);
   bool symmetric = bag != NULL && bag[0] == bag[1];
   size_t num_moves = 0;
-  for (size_t i = 0; i < SIZEOF(MOVES); ++i) {
+  for (move_t i = 0; i < SIZEOF(MOVES); ++i) {
     if (symmetric && 2*i >= SIZEOF(MOVES)) {
       return num_moves;
     }
@@ -75,10 +79,17 @@ size_t get_simple_moves(simple_game *g, color_t *bag, size_t *moves_out) {
       moves_out[num_moves++] = i;
     }
   }
+  if (g->late_garbage > 0 && g->late_time_remaining > 0) {
+    moves_out[num_moves++] = PASS;
+  }
   return num_moves;
 }
 
-void play_simple(simple_game *g, color_t *bag, size_t move_index) {
+void play_simple(simple_game *g, color_t *bag, move_t move_index) {
+  if (move_index == PASS) {
+    g->late_time_remaining = 0;
+    return;
+  }
   color_t color1 = bag[0];
   color_t color2 = bag[1];
 
@@ -96,6 +107,12 @@ void play_simple(simple_game *g, color_t *bag, size_t move_index) {
 int resolve_simple(simple_game *g) {
   int chain_number;
   int score = tick_simple_screen(&(g->screen), &chain_number);
+
+  g->late_time_remaining -= chain_number * 17 + g->move_time;
+  if (g->late_time_remaining <= 0) {
+    g->pending_garbage += g->late_garbage;
+    g->late_garbage = 0;
+  }
 
   if (chain_number && g->all_clear_bonus) {
     g->point_residue += SIMPLE_ALL_CLEAR_BONUS;
@@ -118,12 +135,6 @@ int resolve_simple(simple_game *g) {
     generated_garbage = 0;
   } else {
     generated_garbage -= g->late_garbage;
-    g->late_garbage = 0;
-  }
-  
-  g->late_time_remaining -= chain_number + g->move_time;
-  if (g->late_time_remaining <= 0) {
-    g->pending_garbage += g->late_garbage;
     g->late_garbage = 0;
   }
 
