@@ -111,16 +111,20 @@ MOVES = [
 
 LOG = False
 
+identity = None
+
 wins = 0
 draws = 0
 losses = 0
 
 def on_message(ws, message):
-    global wins, draws, losses
+    global identity, wins, draws, losses
     if LOG:
         print("Message received", message)
     data = json.loads(message)
-    if data["type"] == "move request":
+    if data["type"] == "identity":
+        identity = data["player"]
+    elif data["type"] == "bag" and data["player"] == identity:
         ws.send(json.dumps({"type": "simple state request"}))
     elif data["type"] == "simple state":
         state = data["state"]
@@ -147,7 +151,7 @@ def on_message(ws, message):
 
         response = dict(MOVES[move])
         response["type"] = "move"
-        response["kickDown"] = True
+        response["hardDrop"] = True
         ws.send(json.dumps(response))
     elif data["type"] == "game result":
         if data["result"] == "win":

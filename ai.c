@@ -4,6 +4,7 @@
 /**
  * Determine if the game is effectively locked out.
  */
+// TODO: Fix
 int effective_lockout(simple_game *g, color_t *bag, size_t bag_remaining) {
   puyos p;
   puyos mask;
