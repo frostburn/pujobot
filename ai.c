@@ -162,6 +162,7 @@ int maxDroplet(simple_game *g) {
   return max;
 }
 
+// TODO: naming
 int flexDroplet(simple_game *g) {
   double sum = 0;
   int true_max = HEURISTIC_FAIL;
@@ -183,6 +184,14 @@ int flexDroplet(simple_game *g) {
   return 0.8 * sum / COLOR_SELECTION_SIZE + 0.2 * true_max;
 }
 
+double pass_penalty(simple_game *g) {
+  if (g->late_time_remaining <= 0) {
+    fprintf(stderr, "Passing shouldn't be considered here.\n");
+    exit(EXIT_FAILURE);
+  }
+  return -10 * g->late_time_remaining;
+}
+
 size_t flexDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
   if (bag_remaining < 2) {
     fprintf(stderr, "Flex 1 needs at least a bag of 2.\n");
@@ -201,8 +210,10 @@ size_t flexDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, 
   for (size_t i = 0; i < num_moves; ++i) {
     simple_game clone = *g;
     play_simple(&clone, bag, moves[i]);
-    int move_score = 0;
-    if (moves[i] != PASS) {
+    double move_score = 0;
+    if (moves[i] == PASS) {
+      move_score = pass_penalty(g);
+    } else {
       move_score = resolve_simple(&clone);
     }
     double score = (
@@ -245,8 +256,10 @@ size_t flexDropletStrategy2(simple_game *g, color_t *bag, size_t bag_remaining, 
   for (size_t i = 0; i < num_moves; ++i) {
     simple_game clone = *g;
     play_simple(&clone, bag, moves[i]);
-    int move_score = 0;
-    if (moves[i] != PASS) {
+    double move_score = 0;
+    if (moves[i] == PASS) {
+      move_score = pass_penalty(g);
+    } else {
       move_score = resolve_simple(&clone);
     }
     double search_score;
@@ -288,8 +301,10 @@ size_t flexDropletStrategy3(simple_game *g, color_t *bag, size_t bag_remaining, 
   for (size_t i = 0; i < num_moves; ++i) {
     simple_game clone = *g;
     play_simple(&clone, bag, moves[i]);
-    int move_score = 0;
-    if (moves[i] != PASS) {
+    double move_score = 0;
+    if (moves[i] == PASS) {
+      move_score = pass_penalty(g);
+    } else {
       move_score = resolve_simple(&clone);
     }
     double search_score;
