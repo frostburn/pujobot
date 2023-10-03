@@ -4,16 +4,18 @@
 #include <time.h>
 #include <assert.h>
 
+#define SIZEOF(arr) (sizeof(arr) / sizeof(*arr))
+
 // gcc main.c -fopenmp -Ofast -march=native
 // gcc -shared -o pujolib.so -fopenmp -fPIC -Ofast -march=native main.c
-
-#include "util.c"
 
 #include "bitboard.c"  // lol
 
 #include "screen.c"  // very modular, yes
 
 #include "game.c"  // such a nice linear progression, no?
+
+#include "util.c"
 
 #include "ai.c"
 
@@ -54,7 +56,7 @@ void play_demo() {
   simple_game g;
   clear_simple_game(&g);
   size_t horizon = 3;
-  color_t *bag = malloc(2 * horizon * sizeof(color_t));
+  color_t *bag = calloc(2 * horizon, sizeof(color_t));
 
   for (size_t i = 0; i < horizon; ++i) {
     advance_bag(bag, horizon);
@@ -67,11 +69,11 @@ void play_demo() {
         g.pending_garbage += (rand() % 25) + (rand() % 25);
       } else {
         g.late_garbage += (rand() % 25) + (rand() % 25);
-        g.late_time_remaining += rand() % 100;
+        g.late_time_remaining = rand() % 100;
       }
     }
     double heuristic_score;
-    size_t move = flexDropletStrategy3(&g, bag, 2*horizon, &heuristic_score);
+    move_t move = flexDropletStrategy3(&g, bag, 2*horizon, &heuristic_score);
     play_simple(&g, bag, move);
     advance_bag(bag, horizon);
     int move_score = resolve_simple(&g);
@@ -140,8 +142,8 @@ int main() {
   srand(time(0));
 
   // benchmark();
-  // play_demo();
-  test_effective_lockout();
+  play_demo();
+  // test_effective_lockout();
 
   return EXIT_SUCCESS;
 }

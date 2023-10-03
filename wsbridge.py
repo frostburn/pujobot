@@ -22,6 +22,8 @@ NUM_PUYO_TYPES = 6
 
 color_t = ctypes.c_int
 
+move_t = ctypes.c_char
+
 class SimpleScreen(ctypes.Structure):
     _fields_ = [
         ("grid", Puyos * NUM_PUYO_TYPES),
@@ -67,7 +69,8 @@ class Bag(color_t * BAG_SIZE):
         self[4] = random.randint(0, 3)
         self[5] = random.randint(0, 3)
 
-NUM_MOVES = WIDTH * 2 + (WIDTH - 1) * 2
+PASS = -1
+NUM_MOVES = WIDTH * 2 + (WIDTH - 1) * 2 + 1
 
 game = SimpleGame()
 g = ctypes.byref(game)
@@ -149,7 +152,10 @@ def on_message(ws, message):
         print("Heuristic score:", heuristic_score.value)
         print("W/D/L:", "{}/{}/{}".format(wins, draws, losses))
 
-        response = dict(MOVES[move])
+        if move == PASS:
+            response = {"pass": True}
+        else:
+            response = dict(MOVES[move])
         response["type"] = "move"
         response["hardDrop"] = True
         ws.send(json.dumps(response))

@@ -109,6 +109,21 @@ void store_mask(puyos result, puyos *grid) {
   }
 }
 
+void store_colored_mask(puyos result, puyos *grid) {
+  result[0] = grid[0][0];
+  result[1] = grid[0][1];
+  result[2] = grid[0][2];
+  result[3] = grid[0][3];
+  result[4] = grid[0][4];
+  result[5] = grid[0][5];
+
+  for (int j = 0; j < NUM_SLICES; ++j) {
+    for (int i = 1; i < NUM_PUYO_COLORS; ++i) {
+      result[j] |= grid[i][j];
+    }
+  }
+}
+
 bool resolve_gravity(puyos *grid) {
   slice_t unsupported;
   slice_t falling;

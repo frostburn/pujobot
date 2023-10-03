@@ -113,7 +113,7 @@ int effective_lockout(simple_game *g, color_t *bag, size_t bag_remaining) {
  */
 int material_count(simple_game *g) {
   puyos mask;
-  store_mask(mask, g->screen.grid);
+  store_colored_mask(mask, g->screen.grid);
   return puyo_count(mask);
 }
 
@@ -162,6 +162,7 @@ int maxDroplet(simple_game *g) {
   return max;
 }
 
+// TODO: naming
 int flexDroplet(simple_game *g) {
   double sum = 0;
   int true_max = HEURISTIC_FAIL;
@@ -183,13 +184,21 @@ int flexDroplet(simple_game *g) {
   return 0.8 * sum / COLOR_SELECTION_SIZE + 0.2 * true_max;
 }
 
+double pass_penalty(simple_game *g) {
+  if (g->late_time_remaining <= 0) {
+    fprintf(stderr, "Passing shouldn't be considered here.\n");
+    exit(EXIT_FAILURE);
+  }
+  return -10 * g->late_time_remaining;
+}
+
 size_t flexDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
   if (bag_remaining < 2) {
     fprintf(stderr, "Flex 1 needs at least a bag of 2.\n");
     exit(EXIT_FAILURE);
   }
 
-  size_t moves[SIZEOF(MOVES)];
+  move_t moves[MAX_NUM_MOVES];
   size_t num_moves = get_simple_moves(g, bag, moves);
   // Shuffle to break ties
   shuffle(moves, num_moves);
@@ -201,7 +210,12 @@ size_t flexDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, 
   for (size_t i = 0; i < num_moves; ++i) {
     simple_game clone = *g;
     play_simple(&clone, bag, moves[i]);
-    int move_score = resolve_simple(&clone);
+    double move_score = 0;
+    if (moves[i] == PASS) {
+      move_score = pass_penalty(g);
+    } else {
+      move_score = resolve_simple(&clone);
+    }
     double score = (
       move_score +
       PREFER_LONGER * flexDroplet(&clone) +
@@ -230,7 +244,7 @@ size_t flexDropletStrategy2(simple_game *g, color_t *bag, size_t bag_remaining, 
     exit(EXIT_FAILURE);
   }
 
-  size_t moves[SIZEOF(MOVES)];
+  move_t moves[MAX_NUM_MOVES];
   size_t num_moves = get_simple_moves(g, bag, moves);
   // Shuffle to break ties
   shuffle(moves, num_moves);
@@ -242,7 +256,12 @@ size_t flexDropletStrategy2(simple_game *g, color_t *bag, size_t bag_remaining, 
   for (size_t i = 0; i < num_moves; ++i) {
     simple_game clone = *g;
     play_simple(&clone, bag, moves[i]);
-    int move_score = resolve_simple(&clone);
+    double move_score = 0;
+    if (moves[i] == PASS) {
+      move_score = pass_penalty(g);
+    } else {
+      move_score = resolve_simple(&clone);
+    }
     double search_score;
     flexDropletStrategy1(&clone, bag + 2, bag_remaining - 2, &search_score);
     double score = move_score + PREFER_LONGER * search_score;
@@ -267,7 +286,7 @@ size_t flexDropletStrategy3(simple_game *g, color_t *bag, size_t bag_remaining, 
     exit(EXIT_FAILURE);
   }
 
-  size_t moves[SIZEOF(MOVES)];
+  move_t moves[MAX_NUM_MOVES];
   size_t num_moves = get_simple_moves(g, bag, moves);
   // Shuffle to break ties
   shuffle(moves, num_moves);
@@ -276,13 +295,18 @@ size_t flexDropletStrategy3(simple_game *g, color_t *bag, size_t bag_remaining, 
   double max = HEURISTIC_FAIL;
   size_t move = num_moves ? moves[0] : 0;
 
-  double scores[SIZEOF(MOVES)];
+  double scores[MAX_NUM_MOVES];
 
   #pragma omp parallel for
   for (size_t i = 0; i < num_moves; ++i) {
     simple_game clone = *g;
     play_simple(&clone, bag, moves[i]);
-    int move_score = resolve_simple(&clone);
+    double move_score = 0;
+    if (moves[i] == PASS) {
+      move_score = pass_penalty(g);
+    } else {
+      move_score = resolve_simple(&clone);
+    }
     double search_score;
     flexDropletStrategy2(&clone, bag + 2, bag_remaining - 2, &search_score);
     scores[i] = move_score + PREFER_LONGER * search_score;
