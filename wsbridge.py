@@ -146,7 +146,7 @@ def on_message(ws, message):
         for i in range(len(state["bag"])):
             bag[i] = state["bag"][i]
 
-        move = pujolib.flexDropletStrategy3(g, bag, len(state["bag"]), h)
+        move = pujolib.flex_droplet_strategy_4(g, bag, len(state["bag"]), h)
 
         pujolib.print_simple_game(g)
         print("Heuristic score:", heuristic_score.value)

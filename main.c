@@ -73,7 +73,7 @@ void play_demo() {
       }
     }
     double heuristic_score;
-    move_t move = flexDropletStrategy3(&g, bag, 2*horizon, &heuristic_score);
+    move_t move = flex_droplet_strategy_4(&g, bag, 2*horizon, &heuristic_score);
     play_simple(&g, bag, move);
     advance_bag(bag, horizon);
     int move_score = resolve_simple(&g);

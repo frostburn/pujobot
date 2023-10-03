@@ -147,7 +147,7 @@ int top_penalty(simple_game *g) {
   return -result;
 }
 
-int maxDroplet(simple_game *g) {
+int max_droplet(simple_game *g) {
   int max = HEURISTIC_FAIL;
   for (int i = 0; i < COLOR_SELECTION_SIZE; ++i) {
     for (int x = 0; x < WIDTH; ++x) {
@@ -162,8 +162,7 @@ int maxDroplet(simple_game *g) {
   return max;
 }
 
-// TODO: naming
-int flexDroplet(simple_game *g) {
+int flex_droplet(simple_game *g) {
   double sum = 0;
   int true_max = HEURISTIC_FAIL;
   for (int i = 0; i < COLOR_SELECTION_SIZE; ++i) {
@@ -192,7 +191,7 @@ double pass_penalty(simple_game *g) {
   return -10 * g->late_time_remaining;
 }
 
-size_t flexDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
+size_t flex_droplet_strategy_1(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
   if (bag_remaining < 2) {
     fprintf(stderr, "Flex 1 needs at least a bag of 2.\n");
     exit(EXIT_FAILURE);
@@ -218,7 +217,7 @@ size_t flexDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, 
     }
     double score = (
       move_score +
-      PREFER_LONGER * flexDroplet(&clone) +
+      PREFER_LONGER * flex_droplet(&clone) +
       material_count(&clone) +
       top_penalty(&clone) +
       effective_lockout(&clone, bag + 2, bag_remaining - 2)
@@ -238,7 +237,7 @@ size_t flexDropletStrategy1(simple_game *g, color_t *bag, size_t bag_remaining, 
   return move;
 }
 
-size_t flexDropletStrategy2(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
+size_t flex_droplet_strategy_2(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
   if (bag_remaining < 4) {
     fprintf(stderr, "Flex 2 needs at least a bag of 4.\n");
     exit(EXIT_FAILURE);
@@ -263,7 +262,7 @@ size_t flexDropletStrategy2(simple_game *g, color_t *bag, size_t bag_remaining, 
       move_score = resolve_simple(&clone);
     }
     double search_score;
-    flexDropletStrategy1(&clone, bag + 2, bag_remaining - 2, &search_score);
+    flex_droplet_strategy_1(&clone, bag + 2, bag_remaining - 2, &search_score);
     double score = move_score + PREFER_LONGER * search_score;
     if (score > max) {
       max = score;
@@ -280,7 +279,7 @@ size_t flexDropletStrategy2(simple_game *g, color_t *bag, size_t bag_remaining, 
   return move;
 }
 
-size_t flexDropletStrategy3(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
+size_t flex_droplet_strategy_3(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
   if (bag_remaining < 6) {
     fprintf(stderr, "Flex 3 needs at least a bag of 6.\n");
     exit(EXIT_FAILURE);
@@ -308,7 +307,7 @@ size_t flexDropletStrategy3(simple_game *g, color_t *bag, size_t bag_remaining, 
       move_score = resolve_simple(&clone);
     }
     double search_score;
-    flexDropletStrategy2(&clone, bag + 2, bag_remaining - 2, &search_score);
+    flex_droplet_strategy_2(&clone, bag + 2, bag_remaining - 2, &search_score);
     scores[i] = move_score + PREFER_LONGER * search_score;
   }
 
@@ -324,6 +323,97 @@ size_t flexDropletStrategy3(simple_game *g, color_t *bag, size_t bag_remaining, 
   }
 
   *score_out = 0.9 * max + 0.1 * flex_bonus;
+
+  return move;
+}
+
+// RR, RG(2), RY(2), RB(2), GG, GY(2), GB(2), YY, YB(2), BB
+#define NUM_EXTENSIONS (10)
+static const double EXTENSION_WEIGHTS[] = {1, 2, 2, 2, 1, 2, 2, 1, 2, 1};
+#define TOTAL_EXTENSION_WEIGHT (16)
+color_t* extend_bag(simple_game *g, color_t *bag, size_t bag_remaining) {
+  size_t segment_size = bag_remaining + 2;
+  color_t* result = malloc(sizeof(color_t) * segment_size * NUM_EXTENSIONS);
+  color_t* current = result;
+  for (int i = 0; i < COLOR_SELECTION_SIZE; ++i) {
+    for (int j = i; j < COLOR_SELECTION_SIZE; ++j) {
+      for (int k = 0; k < bag_remaining; ++k) {
+        current[k] = bag[k];
+      }
+      current[bag_remaining] = g->color_selection[i];
+      current[bag_remaining+1] = g->color_selection[j];
+      current += segment_size;
+    }
+  }
+  return result;
+}
+
+// Not a real flex. Just a max on flex2.
+size_t flex_droplet_strategy_4(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
+  if (bag_remaining < 6) {
+    fprintf(stderr, "Flex 4 needs at least a bag of 6.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  move_t first_moves[MAX_NUM_MOVES];
+  size_t num_first_moves = get_simple_moves(g, bag, first_moves);
+  // Shuffle to break ties
+  shuffle(first_moves, num_first_moves);
+
+  simple_game *clones = NULL;
+  size_t num_clones = 0;
+  move_t *parent_moves = NULL;
+  double *scores = NULL;
+
+  for (size_t i = 0; i < num_first_moves; ++i) {
+    simple_game clone = *g;
+    play_simple(&clone, bag, first_moves[i]);
+    double first_move_score = resolve_simple(&clone);
+    move_t second_moves[MAX_NUM_MOVES];
+    size_t num_second_moves = get_simple_moves(&clone, bag + 2, second_moves);
+    // No need to shuffle these.
+    clones = realloc(clones, sizeof(simple_game) * (num_clones + num_second_moves));
+    parent_moves = realloc(parent_moves, sizeof(move_t) * (num_clones + num_second_moves));
+    scores = realloc(scores, sizeof(double) * (num_clones + num_second_moves));
+    for (size_t j = 0; j < num_second_moves; ++j) {
+      parent_moves[num_clones] = first_moves[i];
+      clones[num_clones] = clone;
+      play_simple(clones + num_clones, bag + 2, second_moves[j]);
+      scores[num_clones] = first_move_score + resolve_simple(clones + num_clones);
+      num_clones++;
+    }
+  }
+
+  color_t *big_bag = extend_bag(g, bag + 4, bag_remaining - 4);
+  size_t segment_size = bag_remaining - 2;
+
+  #pragma omp parallel for
+  for (size_t i = 0; i < num_clones; ++i) {
+    double weighted_score = 0;
+    for (size_t j = 0; j < NUM_EXTENSIONS; ++j) {
+      double search_score;
+      flex_droplet_strategy_2(clones + i, big_bag + segment_size * j, segment_size, &search_score);
+      weighted_score += search_score * EXTENSION_WEIGHTS[j];
+    }
+    scores[i] += weighted_score / TOTAL_EXTENSION_WEIGHT;
+  }
+
+  free(clones);
+  free(big_bag);
+
+  double max = HEURISTIC_FAIL;
+  size_t move = num_first_moves ? first_moves[0] : 0;
+  for (size_t i = 0; i < num_clones; ++i) {
+    if (scores[i] > max) {
+      max = scores[i];
+      move = parent_moves[i];
+    }
+  }
+
+  free(parent_moves);
+  free(scores);
+
+  *score_out = max;
 
   return move;
 }
