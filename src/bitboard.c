@@ -1,24 +1,5 @@
-#define WIDTH (6)
-#define NUM_SLICES (6)
-#define HEIGHT (16)
-#define VISIBLE_HEIGHT (12)
-#define NUM_PUYO_COLORS (5)
-#define NUM_PUYO_TYPES (6)
-#define CLEAR_THRESHOLD (4)
-
-#define GHOST_Y (3)
-#define BOTTOM_Y (15)
-
-// Bitboard patterns
-#define BOTTOM (32768)
-#define VISIBLE (65520)
-#define SEMI_VISIBLE (65528)
-#define TOPPING_LINE (16)
-
-typedef unsigned short int slice_t;
-typedef unsigned short int puyos[NUM_SLICES];
-
-static const int GROUP_BONUS[] = {0, 2, 3, 4, 5, 6, 7, 10};
+#include "pujobot/util.h"
+#include "pujobot/bitboard.h"
 
 void print_puyos(puyos p) {
   printf("┌─────────────┐\n");

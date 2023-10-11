@@ -1,35 +1,6 @@
-// Scoring
-#define MAX_CLEAR_BONUS (999)
-static const int COLOR_BONUS[] = {0, 0, 3, 6, 12, 24};
-static const int CHAIN_POWERS[] = {
-  0, 8, 16, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448,
-  480, 512, 544, 576, 608, 640, 672,
-};
-
-#define AIR (-1)
-#define RED (0)
-#define GREEN (1)
-#define YELLOW (2)
-#define BLUE (3)
-#define PURPLE (4)
-#define GARBAGE (5)
-
-// Not size_t because AIR can be useful at times.
-typedef int color_t;
-
-typedef struct simple_screen {
-  puyos grid[NUM_PUYO_TYPES];
-  int buffered_garbage;
-} simple_screen;
-
-typedef struct screen {
-  simple_screen base;
-  int chain_number;
-  puyos jiggles;
-  puyos sparks;
-  // jkiss64 jkiss;  // Fair distribution of garbage requires deterministic randomness.
-  bool doJiggles;
-} screen;
+#include "pujobot/util.h"
+#include "pujobot/bitboard.h"
+#include "pujobot/screen.h"
 
 void clear_simple_screen(simple_screen *s) {
   for (int i = 0; i < NUM_PUYO_TYPES; ++i) {
@@ -51,7 +22,7 @@ void randomize_screen(simple_screen *s) {
   }
 }
 
-static const char* ansi_color(color_t color, bool dark) {
+const char* ansi_color(color_t color, bool dark) {
   if (dark) {
     if (color == 0) {
       return "\x1b[31m";

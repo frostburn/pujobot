@@ -50,3 +50,9 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# CMake build
+build/
+
+# CMake configured files
+api/pujo.h

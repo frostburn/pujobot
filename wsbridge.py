@@ -3,15 +3,32 @@ import random
 import sys
 import json
 import websocket
+import subprocess
 
-cmd = "gcc -shared -o pujolib.so -fopenmp -fPIC -Ofast -march=native main.c"
+def get_git_revision_hash() -> str:
+    return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
+
+def get_git_revision_short_hash() -> str:
+    return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
 
 try:
-    pujolib = ctypes.CDLL("./pujolib.so")
+    libpujo = ctypes.CDLL("./build/lib/libpujo.so")
 except OSError:
-    sys.stderr.write("Library not found. Did you remember to run:\n")
-    sys.stderr.write(cmd + "\n\n")
+    sys.stderr.write("Library not found. Did you remember compile it?\n")
     raise()
+
+app_name = "pujobot"
+
+Version = ctypes.c_char * 16
+version_str = Version()
+libpujo.version(version_str)
+version = version_str.value.decode()
+
+client_info = {
+    "name": app_name,
+    "version": version,
+    "resolved": get_git_revision_short_hash(),
+}
 
 WIDTH = 6
 NUM_SLICES = WIDTH
@@ -75,7 +92,7 @@ NUM_MOVES = WIDTH * 2 + (WIDTH - 1) * 2 + 1
 game = SimpleGame()
 g = ctypes.byref(game)
 s = ctypes.byref(game.screen)
-pujolib.clear_simple_game(g)
+libpujo.clear_simple_game(g)
 
 bag = Bag()
 
@@ -146,9 +163,9 @@ def on_message(ws, message):
         for i in range(len(state["bag"])):
             bag[i] = state["bag"][i]
 
-        move = pujolib.flex_droplet_strategy_4(g, bag, len(state["bag"]), h)
+        move = libpujo.flex_droplet_strategy_3(g, bag, len(state["bag"]), h)
 
-        pujolib.print_simple_game(g)
+        libpujo.print_simple_game(g)
         print("Heuristic score:", heuristic_score.value)
         print("W/D/L:", "{}/{}/{}".format(wins, draws, losses))
 
@@ -167,7 +184,7 @@ def on_message(ws, message):
         else:
             losses += 1
         print("Game over:", data["result"], data["reason"])
-        ws.send(json.dumps({"type": "game request"}))
+        ws.send(json.dumps({"type": "game request", "name": "Pujobot/Flex3", "clientInfo": client_info}))
 
 def on_error(ws, error):
     print("Error", error)
@@ -177,7 +194,7 @@ def on_close(ws, close_status_code, close_msg):
 
 def on_open(ws):
     print("Connection established.")
-    ws.send(json.dumps({"type": "game request"}))
+    ws.send(json.dumps({"type": "game request", "name": "Pujobot/Flex3", "clientInfo": client_info}))
 
 if __name__ == "__main__":
     # websocket.enableTrace(True)

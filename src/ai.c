@@ -1,5 +1,8 @@
-#define HEURISTIC_FAIL (-2000000)
-#define PREFER_LONGER (1.1)
+#include "pujobot/util.h"
+#include "pujobot/bitboard.h"
+#include "pujobot/screen.h"
+#include "pujobot/game.h"
+#include "pujobot/ai.h"
 
 /**
  * Determine if the game is effectively locked out.
@@ -327,10 +330,6 @@ size_t flex_droplet_strategy_3(simple_game *g, color_t *bag, size_t bag_remainin
   return move;
 }
 
-// RR, RG(2), RY(2), RB(2), GG, GY(2), GB(2), YY, YB(2), BB
-#define NUM_EXTENSIONS (10)
-static const double EXTENSION_WEIGHTS[] = {1, 2, 2, 2, 1, 2, 2, 1, 2, 1};
-#define TOTAL_EXTENSION_WEIGHT (16)
 color_t* extend_bag(simple_game *g, color_t *bag, size_t bag_remaining) {
   size_t segment_size = bag_remaining + 2;
   color_t* result = malloc(sizeof(color_t) * segment_size * NUM_EXTENSIONS);
