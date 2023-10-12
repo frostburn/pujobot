@@ -1,5 +1,7 @@
 #include <assert.h>
 
+#include "jkiss/jkiss.h"
+
 #include "pujobot/util.h"
 #include "pujobot/bitboard.h"
 #include "pujobot/screen.h"
@@ -56,6 +58,8 @@ void test_effective_lockout() {
 }
 
 int main() {
+  jkiss_init();
+
   test_effective_lockout();
 
   return EXIT_SUCCESS;

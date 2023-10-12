@@ -1,3 +1,5 @@
+#include "jkiss/jkiss.h"
+
 #include "pujobot/util.h"
 #include "pujobot/bitboard.h"
 #include "pujobot/screen.h"
@@ -93,6 +95,17 @@ void print_screen(simple_screen *s) {
   printf("Buffered garbage = %d\n", s->buffered_garbage);
 }
 
+void shuffle_columns(puyos p, jkiss32 *jkiss) {
+  unsigned int entropy = jkiss32_pure_step(jkiss);
+  for (int i = NUM_SLICES - 1; i > 0; i--) {
+    int j = entropy % (i + 1);
+    entropy /= (i + 1);
+    slice_t temp = p[i];
+    p[i] = p[j];
+    p[j] = temp;
+  }
+}
+
 int tick_simple_screen(simple_screen *s, int *chain_number_out) {
   *chain_number_out = 0;
   int score = 0;
@@ -111,15 +124,12 @@ int tick_simple_screen(simple_screen *s, int *chain_number_out) {
       s->buffered_garbage -= WIDTH;
     } else if (s->buffered_garbage) {
       puyos line;
-      clear(line);
-      while (s->buffered_garbage) {
-        int x = rand() % WIDTH;
-        if (!line[x]) {
-          line[x] = 1;
-          s->buffered_garbage--;
-        }
+      for (int i = 0; i < NUM_SLICES; i++) {
+        line[i] = (i < s->buffered_garbage);
       }
+      shuffle_columns(line, &s->jkiss);
       merge(s->grid[GARBAGE], line);
+      s->buffered_garbage = 0;
     }
     fall_one(s->grid);
   }

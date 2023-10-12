@@ -41,10 +41,20 @@ color_t = ctypes.c_int
 
 move_t = ctypes.c_char
 
+class JKISS32(ctypes.Structure):
+    _fields_ = [
+        ("x", ctypes.c_uint),
+        ("y", ctypes.c_uint),
+        ("z", ctypes.c_uint),
+        ("c", ctypes.c_uint),
+        ("w", ctypes.c_uint),
+    ]
+
 class SimpleScreen(ctypes.Structure):
     _fields_ = [
         ("grid", Puyos * NUM_PUYO_TYPES),
-        ("buffered_garbage", ctypes.c_int)
+        ("buffered_garbage", ctypes.c_int),
+        ("jkiss", JKISS32),
     ]
 
 COLOR_SELECTION_SIZE = 4
@@ -60,7 +70,7 @@ class SimpleGame(ctypes.Structure):
         ("late_garbage", ctypes.c_int),
         ("late_time_remaining", ctypes.c_float),
         ("move_time", ctypes.c_float),
-        ("color_selection", ColorSelection)
+        ("color_selection", ColorSelection),
     ]
 
 BAG_SIZE = 6
@@ -159,6 +169,13 @@ def on_message(ws, message):
             for i in range(NUM_SLICES):
                 game.screen.grid[j][i] = state["screen"]["grid"][j][i]
         game.screen.buffered_garbage = state["screen"]["bufferedGarbage"]
+
+        game.screen.jkiss.x = state["screen"]["jkiss"][0]
+        game.screen.jkiss.y = state["screen"]["jkiss"][1]
+        game.screen.jkiss.z = state["screen"]["jkiss"][2]
+        game.screen.jkiss.c = state["screen"]["jkiss"][3]
+        game.screen.jkiss.w = state["screen"]["jkiss"][4]
+
         game.point_residue = state["pointResidue"]
         game.all_clear_bonus = state["allClearBonus"]
         game.pending_garbage = state["pendingGarbage"]

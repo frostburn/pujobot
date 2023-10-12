@@ -1,5 +1,7 @@
 #include <time.h>
 
+#include "jkiss/jkiss.h"
+
 #include "pujobot/util.h"
 #include "pujobot/bitboard.h"
 #include "pujobot/screen.h"
@@ -18,6 +20,7 @@ void advance_bag(color_t *bag, size_t horizon) {
 void play_demo() {
   simple_game g;
   clear_simple_game(&g);
+  g.screen.jkiss = jkiss32_spawn();
   size_t horizon = 3;
   color_t *bag = calloc(2 * horizon, sizeof(color_t));
 
@@ -36,7 +39,7 @@ void play_demo() {
       }
     }
     double heuristic_score;
-    move_t move = flex_droplet_strategy_4(&g, bag, 2*horizon, &heuristic_score);
+    move_t move = flex_droplet_strategy_3(&g, bag, 2*horizon, &heuristic_score);
     play_simple(&g, bag, move);
     advance_bag(bag, horizon);
     int move_score = resolve_simple(&g);
@@ -53,6 +56,7 @@ void play_demo() {
 
 int main() {
   srand(time(0));
+  jkiss_init();
 
   play_demo();
 

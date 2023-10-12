@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "pujobot/bitboard.h"
+#include "jkiss/jkiss.h"
 
 // Scoring
 #define MAX_CLEAR_BONUS (999)
@@ -26,6 +27,7 @@ typedef int color_t;
 typedef struct simple_screen {
   puyos grid[NUM_PUYO_TYPES];
   int buffered_garbage;
+  jkiss32 jkiss;
 } simple_screen;
 
 void clear_simple_screen(simple_screen *s);
