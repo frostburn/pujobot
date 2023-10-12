@@ -1,0 +1,19 @@
+#ifndef PUJOBOT_API_H_GUARD
+#define PUJOBOT_API_H_GUARD
+
+#define PROJECT_NAME "@PROJECT_NAME@"
+#define VERSION_MAJOR "@VERSION_MAJOR@"
+#define VERSION_MINOR "@VERSION_MINOR@"
+#define VERSION_PATCH "@VERSION_PATCH@"
+
+#include "pujobot/util.h"
+#include "pujobot/bitboard.h"
+#include "pujobot/screen.h"
+#include "pujobot/game.h"
+#include "pujobot/ai.h"
+
+void initialize();
+
+void version(char *out);
+
+#endif /* !PUJOBOT_API_H_GUARD */

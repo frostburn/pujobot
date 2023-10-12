@@ -1,3 +1,5 @@
+#include "pujobot/util.h"
+
 void shuffle(move_t *array, size_t array_size) {
   int entropy = 0;
   int juice = RAND_MAX;
