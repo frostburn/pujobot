@@ -1,3 +1,4 @@
+import argparse
 import ctypes
 import random
 import sys
@@ -16,6 +17,13 @@ try:
 except OSError:
     sys.stderr.write("Library not found. Did you remember compile it?\n")
     raise()
+
+BOTS = {
+    "flex1": libpujo.flex_droplet_strategy_1,
+    "flex2": libpujo.flex_droplet_strategy_2,
+    "flex3": libpujo.flex_droplet_strategy_3,
+    "flex4": libpujo.flex_droplet_strategy_4,
+}
 
 app_name = "pujobot"
 
@@ -148,11 +156,20 @@ MOVES = [
 
 LOG = False
 
+bot = None
+
 identity = None
 
 wins = 0
 draws = 0
 losses = 0
+
+def request_game(ws):
+    ws.send(json.dumps({
+        "type": "game request",
+        "name": "Pujobot/{}".format(bot.title()),
+        "clientInfo": client_info
+    }))
 
 def on_message(ws, message):
     global identity, wins, draws, losses
@@ -187,7 +204,7 @@ def on_message(ws, message):
         for i in range(len(state["bag"])):
             bag[i] = state["bag"][i]
 
-        move = libpujo.flex_droplet_strategy_3(g, bag, len(state["bag"]), h)
+        move = BOTS[bot](g, bag, len(state["bag"]), h)
 
         libpujo.print_simple_game(g)
         print("Move:", move)
@@ -210,7 +227,7 @@ def on_message(ws, message):
         else:
             losses += 1
         print("Game over:", data["result"], data["reason"])
-        ws.send(json.dumps({"type": "game request", "name": "Pujobot/Flex3", "clientInfo": client_info}))
+        request_game(ws)
 
 def on_error(ws, error):
     print("Error", error)
@@ -220,9 +237,18 @@ def on_close(ws, close_status_code, close_msg):
 
 def on_open(ws):
     print("Connection established.")
-    ws.send(json.dumps({"type": "game request", "name": "Pujobot/Flex3", "clientInfo": client_info}))
+    request_game(ws)
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        prog='Pujobot',
+        description='AI routines for playing Pujo Puyo',
+        epilog='This is a websocket bridge linking C with the bun/TypeScript server')
+    parser.add_argument("bot", nargs="?", default="flex3", choices=BOTS.keys(), help='Strategy to use')
+    args = parser.parse_args()
+
+    bot = args.bot
+
     ws = websocket.WebSocketApp("ws://localhost:3003",
                               on_open=on_open,
                               on_message=on_message,
