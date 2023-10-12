@@ -22,12 +22,12 @@ size_t get_simple_moves(simple_game *g, color_t *bag, move_t *moves_out) {
   store_mask(mask, g->screen.grid);
   bool symmetric = bag != NULL && bag[0] == bag[1];
   size_t num_moves = 0;
-  for (move_t i = 0; i < SIZEOF(MOVES); ++i) {
-    if (symmetric && 2*i >= SIZEOF(MOVES)) {
+  for (move_t i = 0; i < (int) SIZEOF(MOVES); ++i) {
+    if (symmetric && 2*i >= (int) SIZEOF(MOVES)) {
       return num_moves;
     }
-    size_t x1 = MOVES[i][0];
-    size_t x2 = MOVES[i][2];
+    int x1 = MOVES[i][0];
+    int x2 = MOVES[i][2];
     if (!puyo_at(mask, x1, GHOST_Y) || !puyo_at(mask, x2, GHOST_Y)) {
       moves_out[num_moves++] = i;
     }

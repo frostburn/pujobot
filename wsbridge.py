@@ -87,7 +87,14 @@ class Bag(color_t * BAG_SIZE):
         self[5] = random.randint(0, 3)
 
 PASS = -1
+INT_PASS = 255
 NUM_MOVES = WIDTH * 2 + (WIDTH - 1) * 2 + 1
+
+# Doesn't help. Still returns "unsigned" bytes.
+# libpujo.flex_droplet_strategy_1.restype = ctypes.c_char
+# libpujo.flex_droplet_strategy_2.restype = ctypes.c_char
+# libpujo.flex_droplet_strategy_3.restype = ctypes.c_char
+# libpujo.flex_droplet_strategy_4.restype = ctypes.c_char
 
 game = SimpleGame()
 g = ctypes.byref(game)
@@ -166,10 +173,12 @@ def on_message(ws, message):
         move = libpujo.flex_droplet_strategy_3(g, bag, len(state["bag"]), h)
 
         libpujo.print_simple_game(g)
+        print("Move:", move)
         print("Heuristic score:", heuristic_score.value)
         print("W/D/L:", "{}/{}/{}".format(wins, draws, losses))
 
-        if move == PASS:
+
+        if move == PASS or move == INT_PASS:
             response = {"pass": True}
         else:
             response = dict(MOVES[move])
@@ -197,7 +206,6 @@ def on_open(ws):
     ws.send(json.dumps({"type": "game request", "name": "Pujobot/Flex3", "clientInfo": client_info}))
 
 if __name__ == "__main__":
-    # websocket.enableTrace(True)
     ws = websocket.WebSocketApp("ws://localhost:3003",
                               on_open=on_open,
                               on_message=on_message,

@@ -176,7 +176,7 @@ int tick_simple_screen(simple_screen *s, int *chain_number_out) {
 }
 
 bool is_all_clear(simple_screen *s) {
-  for (size_t i = 0; i < NUM_PUYO_TYPES; ++i) {
+  for (int i = 0; i < NUM_PUYO_TYPES; ++i) {
     if (is_nonempty(s->grid[i])) {
       return false;
     }
@@ -190,7 +190,7 @@ bool is_locked_out(simple_screen *s) {
   return topped_up(mask);
 }
 
-bool insert_puyo(simple_screen *s, size_t x, size_t y, color_t color) {
+bool insert_puyo(simple_screen *s, int x, int y, color_t color) {
   puyos mask;
   store_mask(mask, s->grid);
   if (puyo_at(mask, x, y)) {

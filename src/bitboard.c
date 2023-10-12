@@ -177,7 +177,7 @@ void apply_mask(puyos out, puyos in) {
 
 int get_group_bonus(int group_size) {
   group_size -= CLEAR_THRESHOLD;
-  if (group_size >= SIZEOF(GROUP_BONUS)) {
+  if (group_size >= (int) SIZEOF(GROUP_BONUS)) {
     group_size = SIZEOF(GROUP_BONUS) - 1;
   }
   return GROUP_BONUS[group_size];
@@ -219,11 +219,11 @@ int spark_groups(puyos p, puyos sparks_out, int *group_bonus_out) {
   return num_cleared;
 }
 
-bool puyo_at(puyos p, size_t x, size_t y) {
+bool puyo_at(puyos p, int x, int y) {
   return p[x] & (1 << y);
 }
 
-void add_puyo(puyos p, size_t x, size_t y) {
+void add_puyo(puyos p, int x, int y) {
   p[x] |= (1 << y);
 }
 

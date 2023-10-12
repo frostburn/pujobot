@@ -14,7 +14,7 @@
 typedef signed char move_t;
 
 // x1, y1, x2, y2, orientation
-static const size_t MOVES[][5] = {
+static const int MOVES[][5] = {
   {0, 2, 0, 1, 0},
   {1, 2, 1, 1, 0},
   {2, 2, 2, 1, 0},

@@ -194,7 +194,7 @@ double pass_penalty(simple_game *g) {
   return -10 * g->late_time_remaining;
 }
 
-size_t flex_droplet_strategy_1(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
+move_t flex_droplet_strategy_1(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
   if (bag_remaining < 2) {
     fprintf(stderr, "Flex 1 needs at least a bag of 2.\n");
     exit(EXIT_FAILURE);
@@ -207,7 +207,7 @@ size_t flex_droplet_strategy_1(simple_game *g, color_t *bag, size_t bag_remainin
 
   double flex_bonus = 0;
   double max = HEURISTIC_FAIL;
-  size_t move = num_moves ? moves[0] : 0;
+  move_t move = num_moves ? moves[0] : 0;
 
   for (size_t i = 0; i < num_moves; ++i) {
     simple_game clone = *g;
@@ -240,7 +240,7 @@ size_t flex_droplet_strategy_1(simple_game *g, color_t *bag, size_t bag_remainin
   return move;
 }
 
-size_t flex_droplet_strategy_2(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
+move_t flex_droplet_strategy_2(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
   if (bag_remaining < 4) {
     fprintf(stderr, "Flex 2 needs at least a bag of 4.\n");
     exit(EXIT_FAILURE);
@@ -253,7 +253,7 @@ size_t flex_droplet_strategy_2(simple_game *g, color_t *bag, size_t bag_remainin
 
   double flex_bonus = 0;
   double max = HEURISTIC_FAIL;
-  size_t move = num_moves ? moves[0] : 0;
+  move_t move = num_moves ? moves[0] : 0;
 
   for (size_t i = 0; i < num_moves; ++i) {
     simple_game clone = *g;
@@ -282,7 +282,7 @@ size_t flex_droplet_strategy_2(simple_game *g, color_t *bag, size_t bag_remainin
   return move;
 }
 
-size_t flex_droplet_strategy_3(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
+move_t flex_droplet_strategy_3(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
   if (bag_remaining < 6) {
     fprintf(stderr, "Flex 3 needs at least a bag of 6.\n");
     exit(EXIT_FAILURE);
@@ -295,7 +295,7 @@ size_t flex_droplet_strategy_3(simple_game *g, color_t *bag, size_t bag_remainin
 
   double flex_bonus = 0;
   double max = HEURISTIC_FAIL;
-  size_t move = num_moves ? moves[0] : 0;
+  move_t move = num_moves ? moves[0] : 0;
 
   double scores[MAX_NUM_MOVES];
 
@@ -334,9 +334,9 @@ color_t* extend_bag(simple_game *g, color_t *bag, size_t bag_remaining) {
   size_t segment_size = bag_remaining + 2;
   color_t* result = malloc(sizeof(color_t) * segment_size * NUM_EXTENSIONS);
   color_t* current = result;
-  for (int i = 0; i < COLOR_SELECTION_SIZE; ++i) {
-    for (int j = i; j < COLOR_SELECTION_SIZE; ++j) {
-      for (int k = 0; k < bag_remaining; ++k) {
+  for (size_t i = 0; i < COLOR_SELECTION_SIZE; ++i) {
+    for (size_t j = i; j < COLOR_SELECTION_SIZE; ++j) {
+      for (size_t k = 0; k < bag_remaining; ++k) {
         current[k] = bag[k];
       }
       current[bag_remaining] = g->color_selection[i];
@@ -348,7 +348,7 @@ color_t* extend_bag(simple_game *g, color_t *bag, size_t bag_remaining) {
 }
 
 // Not a real flex. Just a max on flex2.
-size_t flex_droplet_strategy_4(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
+move_t flex_droplet_strategy_4(simple_game *g, color_t *bag, size_t bag_remaining, double *score_out) {
   if (bag_remaining < 6) {
     fprintf(stderr, "Flex 4 needs at least a bag of 6.\n");
     exit(EXIT_FAILURE);
@@ -401,7 +401,7 @@ size_t flex_droplet_strategy_4(simple_game *g, color_t *bag, size_t bag_remainin
   free(big_bag);
 
   double max = HEURISTIC_FAIL;
-  size_t move = num_first_moves ? first_moves[0] : 0;
+  move_t move = num_first_moves ? first_moves[0] : 0;
   for (size_t i = 0; i < num_clones; ++i) {
     if (scores[i] > max) {
       max = scores[i];

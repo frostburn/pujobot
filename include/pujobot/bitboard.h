@@ -57,9 +57,9 @@ int get_group_bonus(int group_size);
 
 int spark_groups(puyos p, puyos sparks_out, int *group_bonus_out);
 
-bool puyo_at(puyos p, size_t x, size_t y);
+bool puyo_at(puyos p, int x, int y);
 
-void add_puyo(puyos p, size_t x, size_t y);
+void add_puyo(puyos p, int x, int y);
 
 void vanish_top(puyos p);
 

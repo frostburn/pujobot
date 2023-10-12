@@ -42,7 +42,7 @@ bool is_all_clear(simple_screen *s);
 
 bool is_locked_out(simple_screen *s);
 
-bool insert_puyo(simple_screen *s, size_t x, size_t y, color_t color);
+bool insert_puyo(simple_screen *s, int x, int y, color_t color);
 
 void simple_screen_fprintf(FILE *f, simple_screen *s);
 
