@@ -176,8 +176,8 @@ def on_message(ws, message):
     if LOG:
         print("Message received", message)
     data = json.loads(message)
-    if data["type"] == "identity":
-        identity = data["player"]
+    if data["type"] == "game params":
+        identity = data["identity"]
     elif data["type"] == "bag" and data["player"] == identity:
         ws.send(json.dumps({"type": "simple state request"}))
     elif data["type"] == "simple state":
