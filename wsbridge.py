@@ -5,6 +5,8 @@ import sys
 import json
 import websocket
 import subprocess
+import time
+from math import floor
 
 def get_git_revision_hash() -> str:
     return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
@@ -154,6 +156,38 @@ MOVES = [
   {"x1": 4, "y1": 1, "x2": 5, "y2": 1, "orientation": 3},
 ];
 
+class FischerTimer:
+    def __init__(self, initial=60, maximum=120, increment=10):
+        if isinstance(initial, str):
+            initial, rest = initial.split('+')
+            increment, maximum = rest.split('(')
+            initial = float(initial)
+            increment = float(increment)
+            maximum = float(maximum.strip('max:)'))
+
+        self.remaining = initial
+        self.maximum = maximum
+        self.increment = increment
+        self.reference = None
+
+    def __str__(self):
+        return f"{self.remaining}+{self.increment}(max:{self.maximum})"
+
+    def begin(self):
+        self.reference = time.perf_counter()
+
+    def end(self):
+        delta = time.perf_counter() - self.reference
+        self.reference = None
+        if delta > self.remaining:
+            return True
+        self.remaining = min(self.maximum, self.remaining - delta + self.increment)
+        return False
+
+    @property
+    def ms_remaining(self):
+        return 1000 * self.remaining
+
 LOG = False
 
 bot = None
@@ -164,6 +198,8 @@ wins = 0
 draws = 0
 losses = 0
 
+timer = None
+
 def request_game(ws):
     ws.send(json.dumps({
         "type": "game request",
@@ -172,15 +208,18 @@ def request_game(ws):
     }))
 
 def on_message(ws, message):
-    global identity, wins, draws, losses
+    global identity, wins, draws, losses, timer
     if LOG:
         print("Message received", message)
     data = json.loads(message)
     if data["type"] == "game params":
         identity = data["identity"]
+        timer = FischerTimer(data["metadata"]["timeControl"])
     elif data["type"] == "bag" and data["player"] == identity:
         ws.send(json.dumps({"type": "simple state request"}))
     elif data["type"] == "simple state":
+        timer.begin()
+
         state = data["state"]
         for j in range(NUM_PUYO_TYPES):
             for i in range(NUM_SLICES):
@@ -211,14 +250,23 @@ def on_message(ws, message):
         print("Heuristic score:", heuristic_score.value)
         print("W/D/L:", "{}/{}/{}".format(wins, draws, losses))
 
-
         if move == PASS or move == INT_PASS:
             response = {"pass": True}
         else:
             response = dict(MOVES[move])
         response["type"] = "move"
         response["hardDrop"] = True
-        ws.send(json.dumps(response))
+
+        if timer.end():
+            print("Timeout")
+            ws.send(json.dumps({
+                "type": "result",
+                "reason": "timeout",
+            }))
+        else:
+            print("Time: {:.1f}".format(timer.remaining))
+            response["msRemaining"] = timer.ms_remaining
+            ws.send(json.dumps(response))
     elif data["type"] == "game result":
         if data["result"] == "win":
             wins += 1
